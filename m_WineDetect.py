@@ -4,6 +4,8 @@ import scipy.linalg
 from mpl_toolkits.mplot3d import Axes3D
 import scipy.special
 import scipy.optimize
+from sklearn.preprocessing import StandardScaler
+
 
 
 
@@ -159,7 +161,7 @@ def train_SVM(DTR, LTR, C, gamma, K=1):  #非线性 使用 核函数
     kernel = np.exp(-gamma*Dist) + K**0.5
     H = vcol(Z) * vrow(Z) * kernel
 
-    def JDual(alpha):
+    def JDual(alpha):  #对偶
         Ha = np.dot(H, vcol(alpha))
         aHa = np.dot(vrow(alpha), Ha)
         a1 = alpha.sum()
@@ -232,8 +234,13 @@ def train_SVM(DTR, LTR, C, gamma, K=1):  #非线性 使用 核函数
 
 
 if __name__ == '__main__':
-    DTR, LTR = load("./stdData.txt")
+    DTR, LTR = load("./Train.txt")
     DTE, LTE = load("./Test.txt")
+
+    sc = StandardScaler()
+    DTR_std = sc.fit_transform(DTR)  # 给feature归一化
+    DTE_std = sc.fit_transform(DTE)
+
     #plot_scatter(DTR, LTR, '原数据')
     # print(D)
 
@@ -394,6 +401,6 @@ if __name__ == '__main__':
     # print('total: ',(TT+TF+FT+FF))
 
     #SVM
-    Kernel_SVM_RBF = train_SVM(DTR,LTR,C = 1,gamma=0.1,K=0)
-    Kernel_SVM_RBF(DTE,LTE)
+    Kernel_SVM_RBF = train_SVM(DTR_std,LTR,C = 1,gamma=1,K=0)
+    Kernel_SVM_RBF(DTE_std,LTE)
 
