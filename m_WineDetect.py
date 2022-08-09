@@ -144,6 +144,79 @@ def logreg_obj_warp(DTR,LTR,l):
     return logreg_obj
 
 
+def train_SVM(DTR, LTR, C, gamma, K=1):  #非线性 使用 核函数
+    #
+    Z = np.zeros(LTR.shape)
+    Z[LTR == 1] = 1
+    Z[LTR == 0] = -1
+
+    Dist = np.zeros((DTR.shape[1],DTR.shape[1]))
+    for i in range(DTR.shape[1]):
+        for j in range(DTR.shape[1]):
+            xi = DTR[:,i]
+            xj = DTR[:,j]
+            Dist[i,j] = np.linalg.norm(xi-xj)**2
+    kernel = np.exp(-gamma*Dist) + K**0.5
+    H = vcol(Z) * vrow(Z) * kernel
+
+    def JDual(alpha):
+        Ha = np.dot(H, vcol(alpha))
+        aHa = np.dot(vrow(alpha), Ha)
+        a1 = alpha.sum()
+        return -0.5 * aHa.ravel() + a1, -Ha.ravel() + np.ones(alpha.size)  # 损失函数，梯度
+
+    def LDual(alpha):
+        loss, grad = JDual(alpha)
+        return -loss, -grad
+
+    alphaStar, _x, _y = scipy.optimize.fmin_l_bfgs_b(
+        LDual,
+        np.zeros(DTR.shape[1]),
+        bounds=[(0, C)] * DTR.shape[1],
+        factr=1.0,
+        maxiter=100000,
+        maxfun=100000)
+    # wStar = np.dot(DTR, vcol(alphaStar) * vcol(Z))  # wStar 为 (feature+K 行，1列) 的列向量
+
+    print('Dual loss ',JDual(alphaStar)[0])
+
+    def Kernel_SVM_RBF(DTE,LTE):
+
+        predict = np.zeros(DTE.shape[1], dtype=np.int32)
+        for i in range(DTE.shape[1]):
+            xi = DTE[:, i]
+            S = 0
+            for j in range(DTR.shape[1]):
+                xj = DTR[:, j]
+                Dist = np.linalg.norm(xi - xj) ** 2
+                kernel = np.exp(-gamma * Dist)
+                S += alphaStar[j] * Z[j] * kernel
+                # print(S)
+
+            predict[i] = 1 if S > 0 else 0
+
+        pre = []
+        for idx in range(DTE.shape[1]):
+
+            if predict[idx] == LTE[idx]:
+                pre.append(True)
+            else:
+                pre.append(False)
+
+        corr = pre.count(True)
+        wrong = pre.count(False)
+        acc = corr / len(pre)
+        err = wrong / len(pre)
+        print("acc:", acc * 100, "%")
+        print("err:", err * 100, "%")
+
+
+    return Kernel_SVM_RBF
+
+
+
+
+
 if __name__ == '__main__':
     DTR, LTR = load("./Train.txt")
     DTE, LTE = load("./Test.txt")
@@ -262,46 +335,51 @@ if __name__ == '__main__':
 
 
     ## BLR ##
-    l = 1e-6
-    logreg_obj = logreg_obj_warp(DTR,LTR,l)
-    x,f,d = scipy.optimize.fmin_l_bfgs_b(logreg_obj,np.zeros(DTR.shape[0] + 1),approx_grad=True)
-    w = x[0:-1] #训练好的w
-    b = x[-1]   #训练好的b
+    # l = 1e-6
+    # logreg_obj = logreg_obj_warp(DTR,LTR,l)
+    # x,f,d = scipy.optimize.fmin_l_bfgs_b(logreg_obj,np.zeros(DTR.shape[0] + 1),approx_grad=True)
+    # w = x[0:-1] #训练好的w
+    # b = x[-1]   #训练好的b
+    #
+    # w = vrow(w)
+    # s = np.dot(w,DTE)+b
+    # s = s.reshape(s.size,)
+    #
+    # predict = []
+    # TT=0 #应该是T 预测为T
+    # TF=0 #应该是T 预测为F
+    # FT=0 #应该是F 预测为T
+    # FF=0 #应该是F 预测为F
+    # for i in s:
+    #     if i > 0:
+    #         predict.append(1)  # 预测为1
+    #     else:
+    #         predict.append(0)  # 预测为0
+    # # print(res)
+    # res = []
+    # for i in range(len(predict)):
+    #     # print(i)
+    #     if predict[i] == LTE[i]:
+    #         res.append(True)  # 预测正确的
+    #         if predict[i] == 1:
+    #             TT += 1
+    #         else:
+    #             FF += 1
+    #     else:
+    #         res.append(False)  # 预测错误的
+    #         if predict[i] == 1:
+    #             FT += 1
+    #         else:
+    #             TF += 1
+    # corNum = res.count(True)
+    # errNum = res.count(False)
+    # err_rate = errNum / len(res)
+    # print("l:", l, " Error Rate:", err_rate)
+    # print('TT: ',TT,'TF: ',TF)
+    # print('FT: ',FT,'FF: ',FF)
+    # print('total: ',(TT+TF+FT+FF))
 
-    w = vrow(w)
-    s = np.dot(w,DTE)+b
-    s = s.reshape(s.size,)
+    #SVM
+    Kernel_SVM_RBF = train_SVM(DTR,LTR,C = 1,gamma=0.1,K=0)
+    Kernel_SVM_RBF(DTE,LTE)
 
-    predict = []
-    TT=0 #应该是T 预测为T
-    TF=0 #应该是T 预测为F
-    FT=0 #应该是F 预测为T
-    FF=0 #应该是F 预测为F
-    for i in s:
-        if i > 0:
-            predict.append(1)  # 预测为1
-        else:
-            predict.append(0)  # 预测为0
-    # print(res)
-    res = []
-    for i in range(len(predict)):
-        # print(i)
-        if predict[i] == LTE[i]:
-            res.append(True)  # 预测正确的
-            if predict[i] == 1:
-                TT += 1
-            else:
-                FF += 1
-        else:
-            res.append(False)  # 预测错误的
-            if predict[i] == 1:
-                FT += 1
-            else:
-                TF += 1
-    corNum = res.count(True)
-    errNum = res.count(False)
-    err_rate = errNum / len(res)
-    print("l:", l, " Error Rate:", err_rate)
-    print('TT: ',TT,'TF: ',TF)
-    print('FT: ',FT,'FF: ',FF)
-    print('total: ',(TT+TF+FT+FF))
