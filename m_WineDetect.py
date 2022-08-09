@@ -27,7 +27,7 @@ def load(filename):
                 labelsList.append(label)
             except:
                 pass
-        return np.hstack(DList), np.array(labelsList, dtype=np.int32)
+        return np.hstack(DList), np.array(labelsList, dtype=np.float32)
 
 
 def plot_scatter(D, L, title):
@@ -232,7 +232,7 @@ def train_SVM(DTR, LTR, C, gamma, K=1):  #非线性 使用 核函数
 
 
 if __name__ == '__main__':
-    DTR, LTR = load("./Train.txt")
+    DTR, LTR = load("./stdData.txt")
     DTE, LTE = load("./Test.txt")
     #plot_scatter(DTR, LTR, '原数据')
     # print(D)
