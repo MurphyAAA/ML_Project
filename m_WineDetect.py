@@ -195,13 +195,25 @@ def train_SVM(DTR, LTR, C, gamma, K=1):  #非线性 使用 核函数
 
             predict[i] = 1 if S > 0 else 0
 
+        TP=0
+        TN=0
+        FP=0
+        FN=0
         pre = []
         for idx in range(DTE.shape[1]):
 
             if predict[idx] == LTE[idx]:
                 pre.append(True)
+                if LTE[idx] == 0:
+                    TN+=1
+                else:
+                    TP+=1
             else:
                 pre.append(False)
+                if LTE[idx] == 0:
+                    FN+=1
+                else:
+                    FP+=1
 
         corr = pre.count(True)
         wrong = pre.count(False)
@@ -209,7 +221,9 @@ def train_SVM(DTR, LTR, C, gamma, K=1):  #非线性 使用 核函数
         err = wrong / len(pre)
         print("acc:", acc * 100, "%")
         print("err:", err * 100, "%")
-
+        print('TN: ',TN,'FP: ',FP)
+        print('FN: ',FN,'TP: ',TP)
+        print('total: ',(TN+FP+FN+TP))
 
     return Kernel_SVM_RBF
 
