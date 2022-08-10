@@ -7,14 +7,13 @@ import scipy.optimize
 from sklearn.preprocessing import StandardScaler
 
 
-
-
-
 def vcol(v):  # 转为列向量
     return v.reshape((v.size, 1))
 
+
 def vrow(v):
     return v.reshape((1, v.size))
+
 
 def load(filename):
     DList = []
@@ -90,14 +89,15 @@ def plot_scatter(D, L, title):
 def logpdf_GAU_ND(x, mu, C):  # x: 未去中心化的原数据
     M = x.shape[0]  # 特征数
     a = M * np.log(2 * np.pi)
-    _, b = np.linalg.slogdet(C) # log|C|
+    _, b = np.linalg.slogdet(C)  # log|C|
     xc = (x - mu)
     c = np.dot(xc.T, np.linalg.inv(C))
     c = np.dot(c, xc)
     c = np.diagonal(c)
     return (-1.0 / 2.0) * (a + b + c)
 
-def LDA(D,L,nF,nC=2):
+
+def LDA(D, L, nF, nC=2):
     N = D.shape[1]
     mu = D.mean(1)
     mu = vcol(mu)
@@ -124,44 +124,72 @@ def LDA(D,L,nF,nC=2):
     s, U = scipy.linalg.eigh(SB, SW)
     m = 2
     W = U[:, ::-1][:, 0:m]
-    Dp = np.dot(W.T, D)  #返回投影后的数据集
+    Dp = np.dot(W.T, D)  # 返回投影后的数据集
     ## plot_scatter(DP,LTR,'LDA')
     return Dp
 
 
-def logreg_obj_warp(DTR,LTR,l):
+def logreg_obj_warp(DTR, LTR, l):
     def logreg_obj(v):
         w = v[0:-1]
         b = v[-1]
         w_norm = np.linalg.norm(w)
         w = vcol(w)
-        reg_term = (l/2) * (w_norm**2)
-        negz = -1*(2*LTR-1)
-        fx = np.dot(w.T,DTR) + b
-        logJ = np.logaddexp(0,negz * fx)
+        reg_term = (l / 2) * (w_norm ** 2)
+        negz = -1 * (2 * LTR - 1)
+        fx = np.dot(w.T, DTR) + b
+        logJ = np.logaddexp(0, negz * fx)
         mean_logJ = logJ.mean()
         res = reg_term + mean_logJ
-        res = res.reshape(res.size,)
+        res = res.reshape(res.size, )
         return res
+
     return logreg_obj
 
 
-def train_SVM(DTR, LTR, C, gamma, K=1):  #非线性 使用 核函数
+def train_SVM(DTR, LTR, C, sigma=1, K=1):  # 非线性 使用 核函数
     #
     Z = np.zeros(LTR.shape)
     Z[LTR == 1] = 1
     Z[LTR == 0] = -1
 
-    Dist = np.zeros((DTR.shape[1],DTR.shape[1]))
-    for i in range(DTR.shape[1]):
-        for j in range(DTR.shape[1]):
-            xi = DTR[:,i]
-            xj = DTR[:,j]
-            Dist[i,j] = np.linalg.norm(xi-xj)**2
-    kernel = np.exp(-gamma*Dist) + K**0.5
+    def gaussian_kernel_3(X, Y, sigma=sigma):
+        '''
+        输入
+            X       每一行是一个feature，每一列是一个sample，一个sample有11个特征
+            Y       每一行是一个feature，每一列是一个sample，一个sample有11个特征
+            sigma   浮点数, 高斯核的超参数
+        输出
+            K
+        '''
+        # X = np.array(X)
+        # Y = np.array(Y) xi,yi是列项量
+        dist = np.sum(X * X, axis=0, keepdims=True) \
+             + np.sum(Y * Y, axis=0, keepdims=True) \
+             - 2 * np.dot(X.T, Y)
+
+        # print("Dist - dist ", Dist-dist)
+
+        return np.exp(-dist / (2 * sigma ** 2))+ K ** 0.5
+
+
+
+    # Dist = np.zeros((DTR.shape[1], DTR.shape[1]))
+    # for i in range(DTR.shape[1]):
+    #     for j in range(DTR.shape[1]):
+    #         xi = DTR[:, i]
+    #         xj = DTR[:, j]
+    #         Dist[i, j] = np.linalg.norm(xi - xj) ** 2
+    # # kernel = np.exp(-0.5 * Dist) + K ** 0.5
+    # kernel = np.exp(- Dist / (2 * sigma ** 2)) + K ** 0.5
+
+    kernel = gaussian_kernel_3(DTR,DTR,sigma)
+    # print("kernel",kernel)
+    # print("kernel - kernel2",kernel - kernel2)
     H = vcol(Z) * vrow(Z) * kernel
 
-    def JDual(alpha):  #对偶
+
+    def JDual(alpha):  # 对偶
         Ha = np.dot(H, vcol(alpha))
         aHa = np.dot(vrow(alpha), Ha)
         a1 = alpha.sum()
@@ -180,42 +208,69 @@ def train_SVM(DTR, LTR, C, gamma, K=1):  #非线性 使用 核函数
         maxfun=100000)
     # wStar = np.dot(DTR, vcol(alphaStar) * vcol(Z))  # wStar 为 (feature+K 行，1列) 的列向量
 
-    print('Dual loss ',JDual(alphaStar)[0])
+    # print('Dual loss ', JDual(alphaStar)[0])
 
-    def Kernel_SVM_RBF(DTE,LTE):
+    def Kernel_SVM_RBF(DTE, LTE):
+
+        def gaussian_kernel_2(X, y, sigma=sigma):
+            '''
+            输入
+                X       二维浮点数组, 第一维长度num是样本数量, 第二维长度dim是特征维数
+                y       一维浮点数组, 长度dim是特征维数
+                sigma   浮点数, 高斯核的超参数
+            输出
+                K       一维浮点数组, 长度为dim, 其中第i个表示kernel(X[i], y)
+
+            '''
+            X = np.array(X)
+            y = np.array(y).reshape(-1)
+            D = X - y
+            return np.exp(-np.sum(D * D, axis=1) / (2 * sigma ** 2)) + K ** 0.5
+
 
         predict = np.zeros(DTE.shape[1], dtype=np.int32)
-        for i in range(DTE.shape[1]):
-            xi = DTE[:, i]
-            S = 0
-            for j in range(DTR.shape[1]):
-                xj = DTR[:, j]
-                Dist = np.linalg.norm(xi - xj) ** 2
-                kernel = np.exp(-gamma * Dist)
-                S += alphaStar[j] * Z[j] * kernel
-                # print(S)
+        # for i in range(DTE.shape[1]):
+        #     xi = DTE[:, i]
+        #     S = 0
+        #     for j in range(DTR.shape[1]):
+        #         xj = DTR[:, j]
+        #         Dist = np.linalg.norm(xi - xj) ** 2
+        #         kernel = np.exp(- Dist/ (2 * sigma ** 2)) + K ** 0.5
+        #         # kernel = np.exp(- 0.5 * Dist) + K ** 0.5
+        #         S += alphaStar[j] * Z[j] * kernel
+        #         # print(S)
+        #
+        #     predict[i] = 1 if S > 0 else 0
 
+        #优化
+        for i in range(DTE.shape[1]):
+            xi = DTE[:,i]
+            kernel = gaussian_kernel_2(DTR.T,xi.ravel(),sigma)
+            S = (vrow(alphaStar) * vrow(Z) * kernel).sum()
             predict[i] = 1 if S > 0 else 0
 
-        TP=0
-        TN=0
-        FP=0
-        FN=0
+
+        TP = 0
+        TN = 0
+        FP = 0
+        FN = 0
         pre = []
         for idx in range(DTE.shape[1]):
 
             if predict[idx] == LTE[idx]:
+                # return True
                 pre.append(True)
                 if LTE[idx] == 0:
-                    TN+=1
+                    TN += 1
                 else:
-                    TP+=1
+                    TP += 1
             else:
+                # return False
                 pre.append(False)
                 if LTE[idx] == 0:
-                    FN+=1
+                    FN += 1
                 else:
-                    FP+=1
+                    FP += 1
 
         corr = pre.count(True)
         wrong = pre.count(False)
@@ -223,14 +278,11 @@ def train_SVM(DTR, LTR, C, gamma, K=1):  #非线性 使用 核函数
         err = wrong / len(pre)
         print("acc:", acc * 100, "%")
         print("err:", err * 100, "%")
-        print('TN: ',TN,'FP: ',FP)
-        print('FN: ',FN,'TP: ',TP)
-        print('total: ',(TN+FP+FN+TP))
+        print('TN: ', TN, 'FP: ', FP)
+        print('FN: ', FN, 'TP: ', TP)
+        print('total: ', (TN + FP + FN + TP))
 
     return Kernel_SVM_RBF
-
-
-
 
 
 if __name__ == '__main__':
@@ -241,7 +293,7 @@ if __name__ == '__main__':
     DTR_std = sc.fit_transform(DTR)  # 给feature归一化
     DTE_std = sc.fit_transform(DTE)
 
-    #plot_scatter(DTR, LTR, '原数据')
+    # plot_scatter(DTR, LTR, '原数据')
     # print(D)
 
     # DTE0 = DTE[:,LTE == 0]
@@ -263,7 +315,6 @@ if __name__ == '__main__':
     ## LDA ##
     # DTRp = LDA(DTR,LTR,11,2) #降维，降维前11个特征，2类
     # DTEp = LDA(DTE,LTE,11,2)
-
 
     ## MVG ##
     # DTR0 = DTRp[:, LTR == 0]
@@ -310,7 +361,6 @@ if __name__ == '__main__':
     # print("acc:", acc * 100, "%")
     # print("err:", err * 100, "%")
 
-
     ## Tied MVG ##
     # DTR0 = DTR[:, LTR == 0]
     # DTR1 = DTR[:, LTR == 1]
@@ -353,7 +403,6 @@ if __name__ == '__main__':
     # print(res)
     # print("acc:", acc * 100, "%")
     # print("err:", err * 100, "%")
-
 
     ## BLR ##
     # l = 1e-6
@@ -400,7 +449,21 @@ if __name__ == '__main__':
     # print('FT: ',FT,'FF: ',FF)
     # print('total: ',(TT+TF+FT+FF))
 
-    #SVM
-    Kernel_SVM_RBF = train_SVM(DTR_std,LTR,C = 1,gamma=1,K=0)
-    Kernel_SVM_RBF(DTE_std,LTE)
+    # SVM
+    res = []
+    # for i in range(DTR_std.shape[1]):
+    # i=0
+        # DTR_std_new = np.delete(DTR_std.copy(),i,axis=1)
+        # LTR_new = np.delete(LTR.copy(),i,axis=0)
+        # DTE_new = DTR_std[:,i:i+1].copy()
+        # LTE_new = np.int32(LTR[i].copy())
+
+    Kernel_SVM_RBF = train_SVM(DTR_std, LTR, C=1, sigma=0.39, K=0)
+    Kernel_SVM_RBF(DTE_std, LTE)
+        # Kernel_SVM_RBF = train_SVM(DTR_std_new, LTR_new, C=1, sigma=1, K=1)
+        # print("start predict ",i)
+        # res.append(Kernel_SVM_RBF(DTE_new,LTE_new))
+
+    # print("result: ")
+    # print(res)
 
