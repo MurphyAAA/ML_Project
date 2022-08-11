@@ -209,7 +209,7 @@ def train_SVM(DTR, LTR, C, sigma=1, K=1,):  # 非线性 使用 核函数
     # wStar = np.dot(DTR, vcol(alphaStar) * vcol(Z))  # wStar 为 (feature+K 行，1列) 的列向量
 
     print('Dual loss ', JDual(alphaStar)[0])
-    JDual(alphaStar)[0];
+    #JDual(alphaStar)[0];
 
 
 
