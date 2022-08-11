@@ -147,12 +147,12 @@ def logreg_obj_warp(DTR, LTR, l):
     return logreg_obj
 
 
-def train_SVM(DTR, LTR, C, sigma=1, K=1):  # 非线性 使用 核函数
+def train_SVM(DTR, LTR, C, sigma=1, K=1,):  # 非线性 使用 核函数
     #
     Z = np.zeros(LTR.shape)
     Z[LTR == 1] = 1
     Z[LTR == 0] = -1
-
+    global dl
     def gaussian_kernel_3(X, Y, sigma=sigma):
         '''
         输入
@@ -208,7 +208,11 @@ def train_SVM(DTR, LTR, C, sigma=1, K=1):  # 非线性 使用 核函数
         maxfun=100000)
     # wStar = np.dot(DTR, vcol(alphaStar) * vcol(Z))  # wStar 为 (feature+K 行，1列) 的列向量
 
-    # print('Dual loss ', JDual(alphaStar)[0])
+    print('Dual loss ', JDual(alphaStar)[0])
+    JDual(alphaStar)[0];
+
+
+
 
     def Kernel_SVM_RBF(DTE, LTE):
 
@@ -450,7 +454,7 @@ if __name__ == '__main__':
     # print('total: ',(TT+TF+FT+FF))
 
     # SVM
-    res = []
+
     # for i in range(DTR_std.shape[1]):
     # i=0
         # DTR_std_new = np.delete(DTR_std.copy(),i,axis=1)
