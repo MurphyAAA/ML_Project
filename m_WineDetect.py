@@ -211,7 +211,10 @@ def train_SVM(DTR, LTR, C, sigma=1, K=1,):  # 非线性 使用 核函数
     print('Dual loss ', JDual(alphaStar)[0])
     #JDual(alphaStar)[0];
 
-
+    t = vrow(alphaStar) * vrow(Z)
+    t = np.dot(t,kernel)
+    b = vrow(Z) - t
+    print(b.mean())
 
 
     def Kernel_SVM_RBF(DTE, LTE):
@@ -251,6 +254,7 @@ def train_SVM(DTR, LTR, C, sigma=1, K=1,):  # 非线性 使用 核函数
             xi = DTE[:,i]
             kernel = gaussian_kernel_2(DTR.T,xi.ravel(),sigma)
             S = (vrow(alphaStar) * vrow(Z) * kernel).sum()
+            # S = (vrow(alphaStar) * vrow(Z) * kernel).sum() +b.mean()
             predict[i] = 1 if S > 0 else 0
 
 
@@ -282,9 +286,14 @@ def train_SVM(DTR, LTR, C, sigma=1, K=1,):  # 非线性 使用 核函数
         err = wrong / len(pre)
         print("acc:", acc * 100, "%")
         print("err:", err * 100, "%")
-        print('TN: ', TN, 'FP: ', FP)
-        print('FN: ', FN, 'TP: ', TP)
-        print('total: ', (TN + FP + FN + TP))
+        print('  Pos       Neg')
+        print('TP: ', TP, 'FP: ', FP)
+        print('FN: ', FN, 'TN: ', TN)
+        print("Precision: ",TP / (TP+FP) *100,'%')
+        print("Recall: ",TP / (TP+FN) *100,'%')
+        # print("Accuracy: ",(TP+TN) / (TP+FP+FN+TN))
+
+        print('total: ', (TP+FP+FN+TN))
 
     return Kernel_SVM_RBF
 
@@ -464,10 +473,5 @@ if __name__ == '__main__':
 
     Kernel_SVM_RBF = train_SVM(DTR_std, LTR, C=1, sigma=0.39, K=0)
     Kernel_SVM_RBF(DTE_std, LTE)
-        # Kernel_SVM_RBF = train_SVM(DTR_std_new, LTR_new, C=1, sigma=1, K=1)
-        # print("start predict ",i)
-        # res.append(Kernel_SVM_RBF(DTE_new,LTE_new))
 
-    # print("result: ")
-    # print(res)
 
