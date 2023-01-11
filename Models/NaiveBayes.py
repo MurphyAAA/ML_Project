@@ -2,9 +2,9 @@
 
 import numpy as np
 import scipy
-from Models.abstract import Models
+from Models.Model import MLModel
 
-class NaiveBayes(Models):
+class NaiveBayes(MLModel):
     __NAME__ = "NaiveBayes"
     def __init__(self):
         self.mu = None

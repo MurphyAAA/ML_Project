@@ -2,10 +2,10 @@
 
 import numpy as np
 import scipy
-from Models.abstract import Models
+from Models.Model import MLModel
 
 
-class TiedCov(Models):
+class TiedCov(MLModel):
     __NAME__ = "Tied Covariance Gaussian"
 
     def __init__(self):

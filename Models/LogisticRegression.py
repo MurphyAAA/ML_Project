@@ -1,9 +1,9 @@
 import numpy as np
 import scipy
-from Models.abstract import Models
+from Models.Model import MLModel
 
 
-class LR(Models):
+class LR(MLModel):
     __NAME__ = "LogicalRegression"
     __LAMBDA__ = 1e-9
 
