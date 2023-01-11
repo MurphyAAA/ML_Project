@@ -1,9 +1,9 @@
 import pdb
 
-from preProcess import *
-from preProcess.ReadData import load
-from preProcess.Prepare import gaussianize
-from preProcess.Prepare import normalize
+from ProcessData import *
+from ProcessData.ReadData import load
+from ProcessData.Prepare import gaussianize
+from ProcessData.Prepare import normalize
 import Models
 
 
@@ -21,6 +21,24 @@ def main():
     print("Best acc for model {} is {:.2f} %.".format(mvg.__NAME__, acc_mvg * 100))
     print("Best acc for model {} is {:.2f} %.".format(nb.__NAME__, acc_nb * 100))
     print("Best acc for model {} is {:.2f} %.".format(td.__NAME__, acc_td * 100))
+
+# logistic Regression
+    lambdas = [1e-6, 1e-3, 1e-1, 1]
+
+    best_acc = 0
+    best_lam = 0
+
+    for lam in lambdas:
+        Model = Models.LR
+        Model.__LAMBDA__ = lam
+        acc_lr, lr = kf.run(Model, dp)
+        print("hyper parameter lambdas {} : best acc for model {} is {:.2f} %.".
+              format(lam, lr.__NAME__,  acc_lr * 100))
+        if acc_lr > best_acc:
+            best_acc = acc_lr
+            best_lam = lam
+    print("Best acc for model {} with hyper parameter lambdas {} is {:.2f} %.".
+          format(lr.__NAME__, best_lam, best_acc * 100))
 
 
 if __name__ == '__main__':
