@@ -10,13 +10,12 @@ import Models
 
 def main():
     # load data from given path
-    D, L = load('Train.txt')
+    D, L = load('Train.txt') # 一个sample是一列
     # preprocessing the dataset
-    normalize(gaussianize(D))
-
+    D = normalize(gaussianize(D))
     dp = DataProvider(D, L)
     kf = KFold(k=5)
-    dcf, mindcf = kf.dcf(Models.MVG, dp)
+    # dcf, mindcf = kf.dcf(Models.MVG, dp)
   #  acc_nb, nb = kf.run(Models.NaiveBayes, dp)
   #   acc_td, td = kf.run(Models.TiedCov, dp)
 
