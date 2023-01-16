@@ -15,7 +15,9 @@ def main():
     D = normalize(gaussianize(D))
     dp = DataProvider(D, L)
     kf = KFold(k=5)
-    # dcf, mindcf = kf.dcf(Models.MVG, dp)
+    mvg = Models.MVG()
+    dcf, mindcf = kf.dcf(mvg, dp)
+    print("DCF=%f, minDcf=%f" % (dcf, mindcf))
   #  acc_nb, nb = kf.run(Models.NaiveBayes, dp)
   #   acc_td, td = kf.run(Models.TiedCov, dp)
 

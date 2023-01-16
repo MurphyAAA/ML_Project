@@ -14,7 +14,7 @@ class MLModel (ABC):
         self.threshold = threshold
 
     @abstractmethod
-    def train(self):
+    def train(self, x, y):
         pass
     @abstractmethod
     def validation(self, x, y):
