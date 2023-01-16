@@ -7,8 +7,24 @@ from scipy import stats
 
 def gaussianize(D):
     # cubic root
+    res = np.cbrt(D)
+    for i in range(11):
+        print(">> ",res[i,:].mean(), res[i,:].std())
     return np.cbrt(D)
-
+def gaussianize1(D):
+    # 一行一个feature
+    ylist=[]
+    for ind in range(11):
+        # rank(D[ind,:]) 第ind个feature的rank的数组
+        res = stats.norm.ppf(rank(D[ind,:]),loc=0,scale=1)
+        ylist.append(res)
+        print(res.mean(),res.std())
+    # y: 11 * 1839
+    y = np.vstack(ylist)
+    return y
+def rank(x):
+    ranks = stats.rankdata(x,method='min') # 一定要是min才是均匀分布！ 不是均匀分布没办法转回高斯，对于一个feature 共N个samples，计算每个sample这个feature的值有多少比他小的，（将N个样本的feature按从小到大排序）
+    return (ranks+1) / (len(x) + 2)
 
 def normalize(D):
     return stats.zscore(D, axis=1)
@@ -35,8 +51,10 @@ def corrlationAnalysis(D):
 
 
 def plot_hist(D, L):
-    D0 = normalize(gaussianize(D[:, L == 0]))
-    D1 = normalize(gaussianize(D[:, L == 1]))
+    # D0 = normalize(gaussianize(D[:, L == 0]))
+    D0 = gaussianize1(D[:, L == 0])
+    # D1 = normalize(gaussianize(D[:, L == 1]))
+    D1 = gaussianize1(D[:, L == 1])
 
 
     # D0 = D[:, L == 0]
