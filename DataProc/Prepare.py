@@ -11,9 +11,8 @@ def gaussianize(D):
 
 
 def normalize(D):
-    # return stats.zscore(D, axis=1)
-    res = (D-D.mean()) / D.std()
-    return res
+    return stats.zscore(D, axis=1)
+
     # Z-score mean
     # sum = 0;
     # for i in range(D.shape[1]):
@@ -38,6 +37,7 @@ def corrlationAnalysis(D):
 def plot_hist(D, L):
     D0 = normalize(gaussianize(D[:, L == 0]))
     D1 = normalize(gaussianize(D[:, L == 1]))
+
 
     # D0 = D[:, L == 0]
     # D1 = D[:, L == 1]
