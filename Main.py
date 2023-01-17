@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from DataProc import *
 from DataProc.ReadData import load
 from DataProc.Prepare import gaussianize
+from DataProc.Prepare import gaussianize1
+from DataProc.Prepare import plot_hist
 from DataProc.Prepare import normalize
 import numpy as np
 import Models
@@ -11,10 +13,11 @@ import Models
 def main():
     # load data from given path
     D, L = load('Train.txt') # 一个sample是一列
+    plot_hist(D,L)
     # preprocessing the dataset
-    D = normalize(gaussianize(D))
-    dp = DataProvider(D, L)
-    kf = KFold(k=5)
+    # D = normalize(gaussianize(D))
+    # dp = DataProvider(D, L)
+    # kf = KFold(k=5)
     # dcf, mindcf = kf.dcf(Models.MVG, dp)
   #  acc_nb, nb = kf.run(Models.NaiveBayes, dp)
   #   acc_td, td = kf.run(Models.TiedCov, dp)
