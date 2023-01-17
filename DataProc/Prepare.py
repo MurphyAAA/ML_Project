@@ -23,7 +23,7 @@ def gaussianize1(D):
     y = np.vstack(ylist)
     return y
 def rank(x):
-    ranks = stats.rankdata(x,method='min') # 一定要是min才是均匀分布！ 不是均匀分布没办法转回高斯
+    ranks = stats.rankdata(x,method='min') # 一定要是min才是均匀分布！ 不是均匀分布没办法转回高斯，对于一个feature 共N个samples，计算每个sample这个feature的值有多少比他小的，（将N个样本的feature按从小到大排序）
     return (ranks+1) / (len(x) + 2)
 
 def normalize(D):
